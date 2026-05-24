@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>留名墙·访客驿站 | 注册登录与留言板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Helvetica Neue', 'Noto Sans', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f5f7fc 0%, #e9eef4 100%);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(2px);
+            border-radius: 2.5rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            padding: 2rem 2rem 2.5rem;
+            transition: all 0.2s ease;
+        }
+
+        /* 页眉 */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px dashed #cbd5e1;
+            padding-bottom: 1.2rem;
+        }
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e2b3c, #2c5f6e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .header p {
+            color: #4b5563;
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        /* 留名墙区域 (留言板) */
+        .message-wall {
+            background: #ffffffdd;
+            backdrop-filter: blur(4px);
+            border-radius: 1.8rem;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        .wall-title {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .wall-title h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0f2c3b;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .wall-title span {
+            background: #d9e2ef;
+            padding: 0.2rem 0.7rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1e4a5f;
+        }
+        .messages-list {
+            max-height: 380px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding-right: 0.4rem;
+        }
+        /* 自定义滚动条 */
+        .messages-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .messages-list::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 8px;
+        }
+        .messages-list::-webkit-scrollbar-thumb {
+            background: #8ba0bc;
+            border-radius: 8px;
+        }
+        .message-item {
+            background: white;
+            border-radius: 1.2rem;
+            padding: 0.8rem 1.2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-left: 4px solid #3b82f6;
+            transition: transform 0.1s ease;
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 0.4rem;
+            gap: 0.5rem;
+        }
+        .message-username {
+            font-weight: 700;
+            color: #1f4e6e;
+            background: #eef2ff;
+            padding: 0.2rem 0.7rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+        .message-time {
+            font-size: 0.7rem;
+            color: #6c757d;
+        }
+        .message-text {
+            font-size: 0.95rem;
+            color: #1e293b;
+            word-break: break-word;
+            line-height: 1.4;
+            margin-top: 0.3rem;
+        }
+        .empty-messages {
+            text-align: center;
+            color: #8ba0bc;
+            padding: 2rem;
+            font-style: italic;
+        }
+
+        /* 通用卡片样式 */
+        .auth-section, .user-section {
+            background: #ffffffcc;
+            backdrop-filter: blur(8px);
+            border-radius: 1.8rem;
+            padding: 1.6rem;
+            margin-top: 0.8rem;
+            border: 1px solid rgba(255,255,240,0.8);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        /* 双栏切换控件 (注册/登录切换) */
+        .auth-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .auth-tab {
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 0.5rem 0.2rem;
+            cursor: pointer;
+            color: #6c757d;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+        .auth-tab.active {
+            color: #2c5f6e;
+            border-bottom-color: #2c5f6e;
+        }
+        .auth-form {
+            transition: opacity 0.2s;
+        }
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            color: #2d3e50;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #cbd5e6;
+            border-radius: 1.2rem;
+            font-size: 0.9rem;
+            background: #fff;
+            transition: 0.2s;
+            outline: none;
+        }
+        input:focus, textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+        button {
+            background: #2c5f6e;
+            color: white;
+            border: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        button:hover {
+            background: #1f4a57;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #1e2a3a;
+        }
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+        .btn-block {
+            width: 100%;
+            padding: 0.8rem;
+            font-size: 1rem;
+        }
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #eef2ff;
+            padding: 0.8rem 1.2rem;
+            border-radius: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .greeting {
+            font-weight: 600;
+            color: #155e75;
+        }
+        .message-area textarea {
+            resize: vertical;
+            font-family: inherit;
+        }
+        .error-msg, .success-msg {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 1rem;
+            display: inline-block;
+            width: 100%;
+        }
+        .error-msg {
+            color: #b91c1c;
+            background: #fee2e2;
+        }
+        .success-msg {
+            color: #15803d;
+            background: #dcfce7;
+        }
+        .footer-note {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #6c86a3;
+            border-top: 1px solid #e2edf7;
+            padding-top: 1rem;
+        }
+        hr {
+            margin: 0.5rem 0;
+            border-color: #e2edf7;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+            .container {
+                padding: 1.2rem;
+            }
+            .wall-title h2 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>✍️ 时光留名墙</h1>
+        <p>访客可注册 · 登录 · 留下你的足迹</p>
+    </div>
+
+    <!-- 留言板区域 对所有访客可见 -->
+    <div class="message-wall">
+        <div class="wall-title">
+            <h2>📜 访客留名簿 <span>共话江湖</span></h2>
+            <span id="message-count">0</span>
+        </div>
+        <div id="messagesContainer" class="messages-list">
+            <!-- 动态渲染留言列表 -->
+            <div class="empty-messages">✨ 暂无留名，快来成为第一个留言的人吧 ✨</div>
+        </div>
+    </div>
+
+    <!-- 未登录区域：显示注册/登录切换 -->
+    <div id="authArea" class="auth-section">
+        <div class="auth-tabs">
+            <div id="loginTabBtn" class="auth-tab active">🔐 登录</div>
+            <div id="registerTabBtn" class="auth-tab">📝 注册新账号</div>
+        </div>
+        <!-- 登录表单 -->
+        <div id="loginFormPanel" class="auth-form">
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="loginUsername" placeholder="输入用户名" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="loginPassword" placeholder="密码">
+            </div>
+            <button id="doLoginBtn" class="btn-block">登 录</button>
+            <div id="loginMessage" class="error-msg" style="display: none;"></div>
+        </div>
+        <!-- 注册表单 (初始隐藏) -->
+        <div id="registerFormPanel" class="auth-form" style="display: none;">
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="regUsername" placeholder="3~16位字母数字下划线" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="regPassword" placeholder="至少3位">
+            </div>
+            <div class="form-group">
+                <label>确认密码</label>
+                <input type="password" id="regConfirmPwd" placeholder="再次输入密码">
+            </div>
+            <button id="doRegisterBtn" class="btn-block">注 册 并 登 录</button>
+            <div id="registerMessage" class="error-msg" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- 已登录区域：欢迎信息 + 留名表单 -->
+    <div id="userArea" class="user-section" style="display: none;">
+        <div class="user-info">
+            <span class="greeting">👋 欢迎，<span id="currentUserSpan"></span></span>
+            <button id="logoutBtn" class="btn-secondary">🚪 退出登录</button>
+        </div>
+        <div class="message-area">
+            <div class="form-group">
+                <label>📢 留下你的心声 / 签名 / 寄语</label>
+                <textarea id="messageInput" rows="3" placeholder="写点什么吧… (最多200字)" maxlength="200"></textarea>
+            </div>
+            <button id="publishMsgBtn">✨ 留名上墙 ✨</button>
+            <div id="publishMsg" class="success-msg" style="display: none;"></div>
+        </div>
+    </div>
+    <div class="footer-note">
+        💡 提示：所有数据保存在浏览器本地（localStorage），刷新页面不丢失。注册后自动登录，即可留名。
+    </div>
+</div>
+
+<script>
+    // ---------- 存储键名 ----------
+    const STORAGE_USERS = 'guestbook_users';
+    const STORAGE_MESSAGES = 'guestbook_messages';
+    const STORAGE_SESSION = 'guestbook_logged_user';  // 当前登录用户名
+
+    // ---------- 全局变量 ----------
+    let currentUser = null;        // 当前登录用户名
+    let users = [];                // [{username, password}]
+    let messages = [];             // [{username, text, timestamp}]
+
+    // ---------- DOM 元素 ----------
+    const authArea = document.getElementById('authArea');
+    const userArea = document.getElementById('userArea');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageCountSpan = document.getElementById('message-count');
+    const currentUserSpan = document.getElementById('currentUserSpan');
+    // 表单元素 & tab
+    const loginTabBtn = document.getElementById('loginTabBtn');
+    const registerTabBtn = document.getElementById('registerTabBtn');
+    const loginPanel = document.getElementById('loginFormPanel');
+    const registerPanel = document.getElementById('registerFormPanel');
+    const doLoginBtn = document.getElementById('doLoginBtn');
+    const doRegisterBtn = document.getElementById('doRegisterBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const publishMsgBtn = document.getElementById('publishMsgBtn');
+    const messageInput = document.getElementById('messageInput');
+    const loginMessageDiv = document.getElementById('loginMessage');
+    const registerMessageDiv = document.getElementById('registerMessage');
+    const publishMsgDiv = document.getElementById('publishMsg');
+
+    // ---------- 辅助函数 ----------
+    function showMsg(element, message, isError = true) {
+        if (!element) return;
+        element.textContent = message;
+        element.style.display = 'block';
+        if (isError) {
+            element.classList.add('error-msg');
+            element.classList.remove('success-msg');
+        } else {
+            element.classList.add('success-msg');
+            element.classList.remove('error-msg');
+        }
+        setTimeout(() => {
+            if (element) element.style.display = 'none';
+        }, 3000);
+    }
+
+    // 隐藏所有临时消息
+    function clearTempMessages() {
+        if(loginMessageDiv) loginMessageDiv.style.display = 'none';
+        if(registerMessageDiv) registerMessageDiv.style.display = 'none';
+        if(publishMsgDiv) publishMsgDiv.style.display = 'none';
+    }
+
+    // 保存用户数据到 localStorage
+    function persistUsers() {
+        localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+    }
+
+    // 保存留言
+    function persistMessages() {
+        localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(messages));
+    }
+
+    // 保存登录会话
+    function persistSession(username) {
+        if (username) {
+            localStorage.setItem(STORAGE_SESSION, username);
+        } else {
+            localStorage.removeItem(STORAGE_SESSION);
+        }
+    }
+
+    // 初始化默认数据 (仅当存储为空时)
+    function initDefaultData() {
+        // 用户初始化
+        const storedUsers = localStorage.getItem(STORAGE_USERS);
+        if (!storedUsers) {
+            users = [
+                { username: '远行客', password: '123' },
+                { username: '清风', password: '123' },
+                { username: '墨羽', password: '123' }
+            ];
+            persistUsers();
+        } else {
+            users = JSON.parse(storedUsers);
+        }
+
+        // 留言初始化
+        const storedMsgs = localStorage.getItem(STORAGE_MESSAGES);
+        if (!storedMsgs) {
+            const now = new Date();
+            messages = [
+                { username: '远行客', text: '山河远阔，人间烟火。第一次踏足留名墙✨', timestamp: new Date(now.getTime() - 86400000).toISOString() },
+                { username: '清风', text: '愿岁月温柔，许我们来日方长。🍃', timestamp: new Date(now.getTime() - 43200000).toISOString() },
+                { username: '墨羽', text: '代码有尽头，创意无边界，大家加油！🚀', timestamp: new Date(now.getTime() - 3600000).toISOString() }
+            ];
+            persistMessages();
+        } else {
+            messages = JSON.parse(storedMsgs);
+        }
+    }
+
+    // 渲染留言墙 (XSS 安全处理)
+    function renderMessages() {
+        if (!messagesContainer) return;
+        if (!messages || messages.length === 0) {
+            messagesContainer.innerHTML = '<div class="empty-messages">💬 还没有留名，登录后写下一段寄语吧~</div>';
+            messageCountSpan.innerText = '0';
+            return;
+        }
+        // 按时间倒序（最新在上）
+        const sorted = [...messages].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+        messageCountSpan.innerText = sorted.length;
+        const fragment = document.createDocumentFragment();
+        sorted.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message-item';
+            // 安全转义
+            const safeUsername = escapeHtml(msg.username);
+            let safeText = escapeHtml(msg.text);
+            // 支持简单换行转换为<br> (可选)
+            safeText = safeText.replace(/\n/g, '<br>');
+            const formattedTime = formatTimestamp(msg.timestamp);
+            msgDiv.innerHTML = `
+                <div class="message-header">
+                    <span class="message-username">${safeUsername}</span>
+                    <span class="message-time">📅 ${formattedTime}</span>
+                </div>
+                <div class="message-text">${safeText}</div>
+            `;
+            fragment.appendChild(msgDiv);
+        });
+        messagesContainer.innerHTML = '';
+        messagesContainer.appendChild(fragment);
+    }
+
+    // 简单防XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    // 时间戳格式化
+    function formatTimestamp(isoString) {
+        try {
+            const date = new Date(isoString);
+            if (isNaN(date.getTime())) return '未知时间';
+            return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+        } catch(e) {
+            return '刚刚';
+        }
+    }
+
+    // 添加新留言 (需登录)
+    function addMessage(text) {
+        if (!currentUser) {
+            showMsg(publishMsgDiv, '请先登录后再留名~', true);
+            return false;
+        }
+        if (!text || text.trim() === '') {
+            showMsg(publishMsgDiv, '留名内容不能为空～', true);
+            return false;
+        }
+        const cleanText = text.trim().substring(0, 200);
+        const newMsg = {
+            username: currentUser,
+            text: cleanText,
+            timestamp: new Date().toISOString()
+        };
+        messages.push(newMsg);
+        persistMessages();
+        renderMessages();
+        // 清空输入框
+        if (messageInput) messageInput.value = '';
+        showMsg(publishMsgDiv, '✅ 留名成功！你的足迹已刻在墙上', false);
+        return true;
+    }
+
+    // 注册逻辑
+    function register(username, password, confirmPwd) {
+        // 验证
+        const trimmedUser = username.trim();
+        const trimmedPwd = password.trim();
+        if (!trimmedUser || trimmedUser.length < 2 || trimmedUser.length > 20) {
+            showMsg(registerMessageDiv, '用户名长度需在2~20字符', true);
+            return false;
+        }
+        if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(trimmedUser)) {
+            showMsg(registerMessageDiv, '用户名只能包含字母、数字、下划线或中文', true);
+            return false;
+        }
+        if (trimmedPwd.length < 3) {
+            showMsg(registerMessageDiv, '密码至少3位', true);
+            return false;
+        }
+        if (trimmedPwd !== confirmPwd.trim()) {
+            showMsg(registerMessageDiv, '两次密码输入不一致', true);
+            return false;
+        }
+        // 检查用户名唯一性
+        const existUser = users.find(u => u.username === trimmedUser);
+        if (existUser) {
+            showMsg(registerMessageDiv, '用户名已存在，请尝试其他名字', true);
+            return false;
+        }
+        // 新增用户
+        users.push({ username: trimmedUser, password: trimmedPwd });
+        persistUsers();
+        // 注册成功后自动登录
+        currentUser = trimmedUser;
+        persistSession(currentUser);
+        updateUIByLoginState();
+        clearTempMessages();
+        showMsg(registerMessageDiv, `🎉 注册成功！欢迎 ${trimmedUser}，已自动登录`, false);
+        // 重置注册表单
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regPassword').value = '';
+        document.getElementById('regConfirmPwd').value = '';
+        renderMessages(); // 刷新留言（不变但保持）
+        return true;
+    }
+
+    // 登录验证
+    function login(username, password) {
+        const trimmedUser = username.trim();
+        const trimmedPwd = password.trim();
+        if (!trimmedUser || !trimmedPwd) {
+            showMsg(loginMessageDiv, '用户名和密码不能为空', true);
+            return false;
+        }
+        const user = users.find(u => u.username === trimmedUser && u.password === trimmedPwd);
+        if (!user) {
+            showMsg(loginMessageDiv, '用户名或密码错误', true);
+            return false;
+        }
+        currentUser = trimmedUser;
+        persistSession(currentUser);
+        updateUIByLoginState();
+        clearTempMessages();
+        showMsg(loginMessageDiv, `登录成功，欢迎回来 ${currentUser} ✨`, false);
+        // 清空登录表单
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        renderMessages();
+        return true;
+    }
+
+    // 退出登录
+    function logout() {
+        currentUser = null;
+        persistSession(null);
+        updateUIByLoginState();
+        clearTempMessages();
+        // 可选提示已在界面中通过更新显示隐藏，不加额外弹窗
+        renderMessages();  // 留言墙不变
+    }
+
+    // 根据登录状态切换界面 (展示 auth 区域 或 user 区域)
+    function updateUIByLoginState() {
+        if (currentUser) {
+            authArea.style.display = 'none';
+            userArea.style.display = 'block';
+            currentUserSpan.innerText = currentUser;
+        } else {
+            authArea.style.display = 'block';
+            userArea.style.display = 'none';
+            // 重置tab样式为登录可见 (防止残留注册界面)
+            setActiveTab('login');
+        }
+    }
+
+    // 处理注册登录选项卡切换
+    function setActiveTab(tab) {
+        if (tab === 'login') {
+            loginTabBtn.classList.add('active');
+            registerTabBtn.classList.remove('active');
+            loginPanel.style.display = 'block';
+            registerPanel.style.display = 'none';
+            clearTempMessages();
+        } else {
+            registerTabBtn.classList.add('active');
+            loginTabBtn.classList.remove('active');
+            loginPanel.style.display = 'none';
+            registerPanel.style.display = 'block';
+            clearTempMessages();
+        }
+    }
+
+    // 尝试恢复会话 (页面加载时)
+    function restoreSession() {
+        const storedUser = localStorage.getItem(STORAGE_SESSION);
+        if (storedUser) {
+            // 验证该用户是否还在 users 中
+            const userExists = users.find(u => u.username === storedUser);
+            if (userExists) {
+                currentUser = storedUser;
+            } else {
+                // 用户已被删除(手动情况) 清空会话
+                persistSession(null);
+                currentUser = null;
+            }
+        } else {
+            currentUser = null;
+        }
+        updateUIByLoginState();
+        renderMessages();
+    }
+
+    // 监听发布留言
+    function bindEvents() {
+        if (doLoginBtn) {
+            doLoginBtn.addEventListener('click', () => {
+                const user = document.getElementById('loginUsername').value;
+                const pwd = document.getElementById('loginPassword').value;
+                login(user, pwd);
+            });
+        }
+        if (doRegisterBtn) {
+            doRegisterBtn.addEventListener('click', () => {
+                const user = document.getElementById('regUsername').value;
+                const pwd = document.getElementById('regPassword').value;
+                const confirm = document.getElementById('regConfirmPwd').value;
+                register(user, pwd, confirm);
+            });
+        }
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', logout);
+        }
+        if (publishMsgBtn) {
+            publishMsgBtn.addEventListener('click', () => {
+                const content = messageInput ? messageInput.value : '';
+                addMessage(content);
+            });
+        }
+        // 切换tab
+        if (loginTabBtn) {
+            loginTabBtn.addEventListener('click', () => setActiveTab('login'));
+        }
+        if (registerTabBtn) {
+            registerTabBtn.addEventListener('click', () => setActiveTab('register'));
+        }
+        // 按回车快捷键提升体验 (非必须，但友好)
+        const loginPwd = document.getElementById('loginPassword');
+        if (loginPwd) {
+            loginPwd.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') doLoginBtn.click();
+            });
+        }
+        const regConfirm = document.getElementById('regConfirmPwd');
+        if (regConfirm) {
+            regConfirm.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') doRegisterBtn.click();
+            });
+        }
+        const msgTextarea = messageInput;
+        if (msgTextarea) {
+            msgTextarea.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (publishMsgBtn) publishMsgBtn.click();
+                }
+            });
+        }
+    }
+
+    // 在页面完全加载后启动
+    window.addEventListener('DOMContentLoaded', () => {
+        initDefaultData();      // 载入或初始化数据
+        bindEvents();           // 绑定交互事件
+        restoreSession();       // 根据session恢复登录状态，渲染UI，展示留言
+        // 额外确保留言列表渲染正确
+        renderMessages();
+    });
+</script>
+</body>
+</html>
